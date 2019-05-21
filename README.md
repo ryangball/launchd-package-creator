@@ -5,7 +5,7 @@ A utility that allows you to easily create a .pkg containing a LaunchDaemon or L
 </p>
 
 ## Usage
-1. Grab a [release](/releases)
+1. Grab a [release](releases)
 2. Select the launchd type (daemon/agent)
 3. Input an indentifier (reverse domain name notation is typical)
 4. Input a version
@@ -19,4 +19,4 @@ A utility that allows you to easily create a .pkg containing a LaunchDaemon or L
 - When choosing a target that is a GUI application (.app), keep in mind that if run as a daemon, it might start before the user has logged in. Also, I'd recommend LimitLoadToSessionType: Aqua for applications (which will be added in a future release).
 
 ## Issues and Feature Requests
-Please [create an issue](/issues/new) for both issues encountered and for feature requests (like additional options that might be useful) or [create a PR](/compare).
+Please [create an issue](issues/new) for both issues encountered and for feature requests (like additional options that might be useful) or [create a PR](compare).
