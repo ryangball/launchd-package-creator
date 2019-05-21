@@ -5,7 +5,7 @@ A utility that allows you to easily create a .pkg containing a LaunchDaemon or L
 </p>
 
 ## Usage
-1. Grab a [release](https://github.com/ryangball/launchd-package-creator/releases)
+1. Install a [release](https://github.com/ryangball/launchd-package-creator/releases)
 2. Select the launchd type (daemon/agent)
 3. Input an indentifier (reverse domain name notation is typical)
 4. Input a version
