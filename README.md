@@ -15,7 +15,7 @@ A utility that allows you to easily create a .pkg containing a LaunchDaemon or L
 8. TEST
 
 ## Notes
-- When creating a LaunchAgent (which runs as the user) AND selecting the StandardOutPath and StandardErrorPath options, you should be mindful as to whether or not the user has access to write to the chosen path/file. Daemons might not have this limitation, as they are run as root (when using this utility).
+- When creating a LaunchAgent (which runs as the user) **and** selecting the StandardOutPath and StandardErrorPath options, you should be mindful as to whether or not the user has access to write to the chosen path/file. Daemons might not have this limitation, as they are run as root (when using this utility).
 - When choosing a target that is a GUI application (.app), keep in mind that if run as a daemon, it might start before the user has logged in. Also, I'd recommend LimitLoadToSessionType: Aqua for applications (which will be added in a future release).
 
 ## Issues and Feature Requests
