@@ -1,6 +1,6 @@
 //
 //  dialog.swift
-//  testing
+//  launchd-package-creator
 //
 //  Created by Ryan Ball on 4/15/19.
 //  Copyright © 2019 Ryan Ball. All rights reserved.

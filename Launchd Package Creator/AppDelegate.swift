@@ -1,6 +1,6 @@
 //
 //  AppDelegate.swift
-//  simple-launchdaemon-creator
+//  launchd-package-creator
 //
 //  Created by Ryan Ball on 4/11/19.
 //  Copyright © 2019 Ryan Ball. All rights reserved.
