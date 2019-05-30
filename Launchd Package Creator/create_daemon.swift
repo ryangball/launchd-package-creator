@@ -166,7 +166,13 @@ public class create_daemon: NSObject {
             let pkgBuildDir = sessionTempDir.appendingPathComponent("build/")
             globalPkgTempLocation = "\(pkgBuildDir.path)/hello.pkg"
             
-            shell("/usr/bin/pkgbuild", "--quiet", "--root", "\(pkgRoot.path)", "--install-location", "/", "--scripts", "\(pkgScripts.path)", "--identifier", "\(globalIdentifier)", "--version", "\(globalVersion)", "--ownership", "recommended", "--component-plist", "\(componentPlistURL.path)", "\(globalPkgTempLocation)")
+            if usingApp == true {
+                shell("/usr/bin/pkgbuild", "--quiet", "--root", "\(pkgRoot.path)", "--install-location", "/", "--scripts", "\(pkgScripts.path)", "--identifier", "\(globalIdentifier)", "--version", "\(globalVersion)", "--ownership", "recommended", "--component-plist", "\(componentPlistURL.path)", "\(globalPkgTempLocation)")
+                
+            } else {
+                shell("/usr/bin/pkgbuild", "--quiet", "--root", "\(pkgRoot.path)", "--install-location", "/", "--scripts", "\(pkgScripts.path)", "--identifier", "\(globalIdentifier)", "--version", "\(globalVersion)", "--ownership", "recommended", "\(globalPkgTempLocation)")
+            }
+            
         }
         
         if buildType == "PKG" {

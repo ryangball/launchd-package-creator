@@ -160,6 +160,7 @@ class ViewController: NSViewController {
             programArgs.isEnabled = false
             programArgs.stringValue = ""
             programArgsOptLabel.isHidden = false
+            usingApp = false
         } else if targetExtension == "app" {
             // Target has a .app extensin and use set /usr/bin/open as the program args
             programArgs.stringValue = String("/usr/bin/open");
@@ -185,6 +186,7 @@ class ViewController: NSViewController {
                     // Either no shebang or we don't know how to deal with the shebang in the file
                     dialogOK(title: "Missing shebang", message: "Your script does not have a proper shebang as the first line. Either add a shebang into the script and try again or manually configure the Program Arguments.")
                 }
+                usingApp = false
             } catch {
                 // bad things happened
             }
