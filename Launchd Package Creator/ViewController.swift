@@ -28,6 +28,8 @@ var globalPkgTempLocation: String = ""
 var globalSessionType: String? = nil
 var emptyRequiredFields = [String]()
 var usingApp: Bool = false
+var globalTargetPathInPlist: String = ""
+var globalPackageTarget: Bool = true
 
 class ViewController: NSViewController {
 
@@ -48,6 +50,9 @@ class ViewController: NSViewController {
     @IBOutlet weak var sessionTypeOptions: NSPopUpButton!
     @IBOutlet weak var sessionTypeCheck: NSButton!
     @IBOutlet weak var programArgsOptLabel: NSTextField!
+    @IBOutlet weak var packageAtDefaultRadio: NSButton!
+    @IBOutlet weak var packageAtSpecifiedRadio: NSButton!
+    @IBOutlet weak var doNotPackageRadio: NSButton!
     
     // Create arrays of fields/buttons to clear or disable when using the "Clear" button
     lazy var fieldsToClear: [NSTextField] = [self.daemonIdentifier, self.daemonVersion, self.programArgs, self.targetPath, self.startIntervalSeconds, self.standardOutPathField, self.standardErrorPathField]
@@ -71,8 +76,8 @@ class ViewController: NSViewController {
         return
     }
     
+    // Function to open the File Save dialog box
     func fileSaveDialog(title: String, allowedFileTypes: Array<String>, source: String) {
-        // Open the File Save dialog box
         let fileSaveDialog = NSSavePanel();
         fileSaveDialog.message                  = title;
         fileSaveDialog.showsResizeIndicator     = true;
@@ -150,7 +155,7 @@ class ViewController: NSViewController {
         }
     }
     
-    func determineProgramArgs (userSelectedTarget:String) -> String {
+    func determineProgramArgs(userSelectedTarget:String) -> String {
         let targetExtension = NSURL(fileURLWithPath: userSelectedTarget).pathExtension
         // Make sure the program args field is enabled initially
         programArgs.isEnabled = true
@@ -174,13 +179,10 @@ class ViewController: NSViewController {
                 let linesOfTarget = targetContents.components(separatedBy: "\n")
                 let shebang = String(linesOfTarget[0]);
                 if shebang.contains ("bash") {
-                    // shebang contains bash
                     programArgs.stringValue = String("/bin/bash");
                 } else if shebang.contains ("sh") {
-                    // shebang contains sh
                     programArgs.stringValue = String("/bin/sh");
                 } else if shebang.contains ("python") {
-                    // shebang contains python
                     programArgs.stringValue = String("/usr/bin/python");
                 } else {
                     // Either no shebang or we don't know how to deal with the shebang in the file
@@ -251,6 +253,30 @@ class ViewController: NSViewController {
         }
     }
     
+    @IBAction func packageAtDefaultAction(_ sender: Any) {
+        if packageAtDefaultRadio.state == NSControl.StateValue.on {
+            packageAtSpecifiedRadio.state = NSControl.StateValue.off
+            doNotPackageRadio.state = NSControl.StateValue.off
+            globalPackageTarget = true
+        }
+    }
+    
+    @IBAction func packageAtSpecifiedAction(_ sender: Any) {
+        if packageAtSpecifiedRadio.state == NSControl.StateValue.on {
+            packageAtDefaultRadio.state = NSControl.StateValue.off
+            doNotPackageRadio.state = NSControl.StateValue.off
+            globalPackageTarget = true
+        }
+    }
+    
+    @IBAction func doNotPackageAction(_ sender: Any) {
+        if doNotPackageRadio.state == NSControl.StateValue.on {
+            packageAtDefaultRadio.state = NSControl.StateValue.off
+            packageAtSpecifiedRadio.state = NSControl.StateValue.off
+            globalPackageTarget = false
+        }
+    }
+    
     @IBAction func startIntervalAction(_ sender: Any) {
         if startInterval.state == NSControl.StateValue.on {
             startIntervalSeconds.isEnabled = true
@@ -298,6 +324,9 @@ class ViewController: NSViewController {
         for button in self.buttonsToClear { button.state = NSControl.StateValue.off }
         for field in self.fieldsToDisable { field.isEnabled = false }
         daemonButton.state = NSControl.StateValue.on
+        packageAtDefaultRadio.state = NSControl.StateValue.on
+        packageAtSpecifiedRadio.state = NSControl.StateValue.off
+        doNotPackageRadio.state = NSControl.StateValue.off
         agentButton.state = NSControl.StateValue.off
         sessionTypeOptions.isEnabled = false
         sessionTypeOptions.selectItem(at: 0)
@@ -324,6 +353,16 @@ class ViewController: NSViewController {
             globalVersion = daemonVersion.stringValue
             globalProgramArgs = programArgs.stringValue
             globalTargetPath = targetPath.stringValue
+            globalTargetPathFileName = (globalTargetPath as NSString).lastPathComponent
+            
+            // Determine the path where the target will be packaged if applicable
+            if packageAtDefaultRadio.state == NSControl.StateValue.on {
+                globalTargetPathInPlist = "/Library/Scripts/\(globalTargetPathFileName)"
+            } else if packageAtSpecifiedRadio.state == NSControl.StateValue.on {
+                globalTargetPathInPlist = globalTargetPath
+            } else if doNotPackageRadio.state == NSControl.StateValue.on {
+                globalTargetPathInPlist = globalTargetPath
+            }
             
             // Determine state of runAtLoad Checkbox, populate value for plist
             if runAtLoad.state == NSControl.StateValue.on {
@@ -363,12 +402,11 @@ class ViewController: NSViewController {
                 globalSessionType = nil
             }
             
-            // Determine the filename of the target app/script, build the program args array for plist
-            globalTargetPathFileName = (globalTargetPath as NSString).lastPathComponent
+            // Build the program args array for plist
             if programArgs.stringValue != "" {
-                globalProgramArgsFull = [globalProgramArgs, "/Library/Scripts/\(globalTargetPathFileName)"]
+                globalProgramArgsFull = [globalProgramArgs, globalTargetPathInPlist]
             } else {
-                globalProgramArgsFull = ["/Library/Scripts/\(globalTargetPathFileName)"]
+                globalProgramArgsFull = [globalTargetPathInPlist]
             }
             
             // Let the user know LaunchAgent/LimitLoadToSessionType: Aqua is preferred for .apps
@@ -391,8 +429,6 @@ class ViewController: NSViewController {
                         // User clicked the continue button
                         create_daemon().build(buildType: buildType)
                         // If the intention is to build a PKG, then show the save dialog
-                        //if buildType == "PKG" { _ = self.fileSaveDialog() }
-                        //if buildType == "Plist" { NSWorkspace.shared.openFile(preferencesURL.path, withApplication: "TextEdit") }
                         if buildType == "Plist" {
                             self.fileSaveDialog(title: "Choose a save location for the launchd plist.", allowedFileTypes: ["plist"], source: preferencesURL.path)
                         }
@@ -404,8 +440,6 @@ class ViewController: NSViewController {
             } else {
                 create_daemon().build(buildType: buildType)
                 // If the intention is to build a PKG, then show the save dialog
-                //if buildType == "PKG" { _ = self.fileSaveDialog() }
-                //if buildType == "Plist" { NSWorkspace.shared.openFile(preferencesURL.path, withApplication: "TextEdit") }
                 if buildType == "Plist" {
                     self.fileSaveDialog(title: "Choose a save location for the launchd plist.", allowedFileTypes: ["plist"], source: preferencesURL.path)
                 }
@@ -442,6 +476,13 @@ class ViewController: NSViewController {
         
         // Set focus to Identifier field
         self.daemonIdentifier.becomeFirstResponder()
+        
+        globalPackageTarget = true
+    }
+    
+    // Disable window resizing
+    override func viewDidAppear() {
+        view.window!.styleMask.remove(.resizable)
     }
 
     override var representedObject: Any? {

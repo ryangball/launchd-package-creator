@@ -41,6 +41,7 @@ public class create_daemon: NSObject {
     var baseTempDir: URL!
     var sessionTempDir: URL!
     var componentPlistURL: URL!
+    var postInstallChownLines: String = ""
     
     public func build(buildType: String) {
         
@@ -51,18 +52,20 @@ public class create_daemon: NSObject {
         preferencesURL = sessionTempDir.appendingPathComponent("/root/Library/\(globalDaemonFolderName)/\(globalIdentifier).plist")
         componentPlistURL = sessionTempDir.appendingPathComponent("/build/component.plist")
         
-        let subPaths = [
+        var subPaths = [
             "root/Library/\(globalDaemonFolderName)",
-            "root/Library/Scripts",
             "scripts",
             "build",
             ]
+        
+        if globalPackageTarget == true {
+            subPaths.append("root/\((globalTargetPathInPlist as NSString).deletingLastPathComponent)")
+        }
         
         subPaths.forEach { subPath in
             let url = sessionTempDir.appendingPathComponent(subPath)
             do {
                 try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil)
-                //print("path created: \(url)")
             } catch let error {
                 print("error: \(error)")
             }
@@ -70,14 +73,22 @@ public class create_daemon: NSObject {
         
         // Create the pkg postinstall script
         func createPostinstall() {
+            if globalPackageTarget == true {
+                postInstallChownLines = """
+                chown -R root:wheel "\(globalTargetPathInPlist)"
+                chmod -R 755 "\(globalTargetPathInPlist)"
+                """
+            } else {
+                postInstallChownLines = ""
+            }
+            
             let postInstallText = """
             #!/bin/bash
             
-            # Set permissions on LaunchDaemon and Script
+            # Set permissions on launchd \(globalDaemonType) files
             chown root:wheel "/Library/\(globalDaemonFolderName)/\(globalIdentifier).plist"
             chmod 644 "/Library/\(globalDaemonFolderName)/\(globalIdentifier).plist"
-            chown -R root:wheel "/Library/Scripts/\(globalTargetPathFileName)"
-            chmod -R 755 "/Library/Scripts/\(globalTargetPathFileName)"
+            \(postInstallChownLines)
             
             exit 0
             """
@@ -102,22 +113,9 @@ public class create_daemon: NSObject {
             }
         }
         
-//        func encodePlist(PlistData: String, Destination: URL) {
-//            let preferencesToEncode = ComponentPlist(BundleIsRelocatable: false, BundleIsVersionChecked: false, BundleOverwriteAction: "upgrade", RootRelativeBundlePath: "/Library/Scripts/\(globalTargetPathFileName)")
-//            let encoder = PropertyListEncoder()
-//            encoder.outputFormat = .xml
-//            do {
-//                let data = try encoder.encode(preferencesToEncode)
-//                try data.write(to: Destination)
-//            } catch {
-//                // Handle error
-//                print(error)
-//            }
-//            // Code goes here
-//        }
-        
+        // Create the component plist
         func createComponentPlist() {
-            let preferencesToEncode = ComponentPlist(BundleIsRelocatable: false, BundleIsVersionChecked: false, BundleOverwriteAction: "upgrade", RootRelativeBundlePath: "/Library/Scripts/\(globalTargetPathFileName)")
+            let preferencesToEncode = ComponentPlist(BundleIsRelocatable: false, BundleIsVersionChecked: false, BundleOverwriteAction: "upgrade", RootRelativeBundlePath: "\(globalTargetPathInPlist)")
             let encoder = PropertyListEncoder()
             encoder.outputFormat = .xml
             do {
@@ -131,7 +129,7 @@ public class create_daemon: NSObject {
         
         // Copy the target script/app
         func copyTarget() {
-            let destinationURL = sessionTempDir.appendingPathComponent("root/Library/Scripts/\(globalTargetPathFileName)")
+            let destinationURL = sessionTempDir.appendingPathComponent("root/\(globalTargetPathInPlist)")
             _ = extras().copyFile(source: globalTargetPath, destination: destinationURL.path)
         }
     
@@ -166,24 +164,24 @@ public class create_daemon: NSObject {
             let pkgBuildDir = sessionTempDir.appendingPathComponent("build/")
             globalPkgTempLocation = "\(pkgBuildDir.path)/hello.pkg"
             
-            if usingApp == true {
+            // If we are packaging an app use a component plist, otherwise it is not needed
+            if (usingApp == true) && (globalPackageTarget == true) {
+                createComponentPlist()
                 shell("/usr/bin/pkgbuild", "--quiet", "--root", "\(pkgRoot.path)", "--install-location", "/", "--scripts", "\(pkgScripts.path)", "--identifier", "\(globalIdentifier)", "--version", "\(globalVersion)", "--ownership", "recommended", "--component-plist", "\(componentPlistURL.path)", "\(globalPkgTempLocation)")
-                
             } else {
                 shell("/usr/bin/pkgbuild", "--quiet", "--root", "\(pkgRoot.path)", "--install-location", "/", "--scripts", "\(pkgScripts.path)", "--identifier", "\(globalIdentifier)", "--version", "\(globalVersion)", "--ownership", "recommended", "\(globalPkgTempLocation)")
             }
-            
         }
         
         if buildType == "PKG" {
             createPostinstall()
-            createComponentPlist()
-            copyTarget()
+            if globalPackageTarget == true {
+                copyTarget()
+            }
             createPlist()
             createPKG()
         } else if buildType == "Plist" {
             createPlist()
         }
-        
     }
 }

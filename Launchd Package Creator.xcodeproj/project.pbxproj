@@ -51,6 +51,7 @@
 		34496CB42260DD740054265A /* launchd-package-creator.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "launchd-package-creator.entitlements"; sourceTree = "<group>"; };
 		34496CEF226518780054265A /* extras.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = extras.swift; sourceTree = "<group>"; };
 		34496CF3226F4CBA0054265A /* create_daemon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = create_daemon.swift; sourceTree = "<group>"; };
+		34FB881822A95B40008E7728 /* Launchd Package Creator.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Launchd Package Creator.entitlements"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -101,6 +102,7 @@
 		34496C87225FF03F0054265A /* Launchd Package Creator */ = {
 			isa = PBXGroup;
 			children = (
+				34FB881822A95B40008E7728 /* Launchd Package Creator.entitlements */,
 				34496CB42260DD740054265A /* launchd-package-creator.entitlements */,
 				34496C88225FF03F0054265A /* AppDelegate.swift */,
 				34496C8A225FF03F0054265A /* ViewController.swift */,
